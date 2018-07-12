@@ -12,6 +12,7 @@ from django.utils.encoding import python_2_unicode_compatible, force_text
 from django.utils.six import string_types
 from django.utils.functional import cached_property
 
+from botocore.exceptions import ParamValidationError
 from filebrowser.settings import EXTENSIONS, VERSIONS, ADMIN_VERSIONS, VERSIONS_BASEDIR, VERSION_QUALITY, STRICT_PIL, IMAGE_MAXBLOCK, DEFAULT_PERMISSIONS
 from filebrowser.utils import path_strip, process_image
 from .namers import get_namer
@@ -492,7 +493,7 @@ class FileObject():
 
         try:
             f = self.site.storage.open(self.path)
-        except IOError:
+        except (IOError, ParamValidationError):
             return ""
         im = Image.open(f)
         version_dir, version_basename = os.path.split(version_path)
@@ -512,15 +513,15 @@ class FileObject():
         # save version
         try:
             version.save(tmpfile, format=Image.EXTENSION[ext.lower()], quality=VERSION_QUALITY, optimize=(os.path.splitext(version_path)[1] != '.gif'))
-        except IOError:
+        except (IOError, ParamValidationError):
             version.save(tmpfile, format=Image.EXTENSION[ext.lower()], quality=VERSION_QUALITY)
         # remove old version, if any
         if version_path != self.site.storage.get_available_name(version_path):
             self.site.storage.delete(version_path)
         self.site.storage.save(version_path, tmpfile)
         # set permissions
-        if DEFAULT_PERMISSIONS is not None:
-            os.chmod(self.site.storage.path(version_path), DEFAULT_PERMISSIONS)
+        # if DEFAULT_PERMISSIONS is not None:
+        #     os.chmod(self.site.storage.path(version_path), DEFAULT_PERMISSIONS)
         return version_path
 
     # DELETE METHODS
