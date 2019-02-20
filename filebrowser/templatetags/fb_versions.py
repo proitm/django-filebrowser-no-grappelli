@@ -45,8 +45,8 @@ class VersionNode(Node):
             else:
                 return version.url
         except Exception:
-            if settings.DEBUG:
-                raise
+            # if settings.DEBUG:
+            #     raise
             if self.var_name:
                 context[self.var_name] = ""
         return ""
